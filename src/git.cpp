@@ -25,7 +25,7 @@
 //   and try a different format (eg cvs-exp)
 
 std::string gGourceGitLogCommand = "git log "
-    "--pretty=format:user:%aN%n%ct "
+    "--pretty=format:user:%aN%n%s%nEND%n%ct "
     "--reverse --raw --encoding=UTF-8 "
     "--no-renames";
 
@@ -125,6 +125,15 @@ bool GitCommitLog::parseCommit(RCommit& commit) {
 
             //username follows user prefix
             commit.username = line.substr(5);
+
+            for (;;)
+            {
+                if(!logf->getNextLine(line)) return false;
+                if (line == "END")
+                    break;
+
+                commit.body += line + "\n";
+            }
 
             if(!logf->getNextLine(line)) return false;
 

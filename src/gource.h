@@ -131,6 +131,7 @@ class Gource : public SDLApp {
     Uint32 update_dir_tree_time;
     Uint32 update_user_tree_time;
     Uint32 draw_time;
+    std::vector<std::string> bodies;
     Uint32 logic_time;
     Uint32 trace_time;
     Uint32 name_calc_time;

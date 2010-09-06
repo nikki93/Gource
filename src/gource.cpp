@@ -23,6 +23,40 @@ int   gGourceMaxQuadTreeDepth = 6;
 
 int gGourceUserInnerLoops = 0;
 
+#define MAX_BODIES 5
+
+/*
+ * Ripped from http://www.digitalpeer.com/id/simple because I was lazy. :P
+ *
+ * Maybe it's better to this by just replacing '\n' in source string with
+ * '\0' and just printing from there.
+ */
+static std::vector<std::string> tokenize(const std::string& str,const std::string& delimiters)
+{
+	std::vector<std::string> tokens;
+    	
+	// skip delimiters at beginning.
+    	std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+    	
+	// find first "non-delimiter".
+    	std::string::size_type pos = str.find_first_of(delimiters, lastPos);
+
+    	while (std::string::npos != pos || std::string::npos != lastPos)
+    	{
+        	// found a token, add it to the std::vector.
+        	tokens.push_back(str.substr(lastPos, pos - lastPos));
+		
+        	// skip delimiters.  Note the "not_of"
+        	lastPos = str.find_first_not_of(delimiters, pos);
+		
+        	// find next "non-delimiter"
+        	pos = str.find_first_of(delimiters, lastPos);
+    	}
+
+	return tokens;
+}
+
+
 Gource::Gource(FrameExporter* exporter) {
 
     this->logfile = gGourceSettings.path;
@@ -1398,6 +1432,12 @@ void Gource::logic(float t, float dt) {
         processCommit(commit, t);
 
         currtime = lasttime = commit.timestamp;
+        if (bodies.empty() || bodies.back() != commit.body)
+        {
+            bodies.push_back(commit.body);
+            if (bodies.size() > MAX_BODIES)
+                bodies.erase(bodies.begin());
+        }
         subseconds = 0.0;
 
         commitqueue.pop_front();
@@ -1919,6 +1959,35 @@ void Gource::draw(float t, float dt) {
 
     if(!gGourceSettings.hide_date) {
         fontmedium.draw(display.width/2 - date_x_offset, 20, displaydate);
+    }
+    if (!bodies.empty())
+    {
+        std::string last = bodies.back();
+        std::vector<std::string> lines = tokenize(last, "\n");
+        int y = 44;
+        for (std::vector<std::string>::iterator iter = lines.begin();
+                iter != lines.end(); ++iter)
+        {
+            fontmedium.draw(display.width/2 - fontmedium.getWidth(*iter)/2, y, *iter);
+            y += 16;
+        }
+    }
+
+    int bodyY = display.height - 23 * MAX_BODIES;
+    for (std::vector<std::string>::reverse_iterator i = bodies.rbegin(); i != bodies.rend(); ++i)
+    {
+        if (bodyY > display.height - 20)
+            break;
+        std::vector<std::string> lines = tokenize(*i, "\n");
+        for (std::vector<std::string>::iterator iter = lines.begin();
+                iter != lines.end(); ++iter)
+        {
+            if (bodyY > display.height - 20)
+                break;
+            fontmedium.draw(10, bodyY, *iter);
+            bodyY += 18;
+        }
+        bodyY += 5;
     }
 
     if(gGourceSettings.title.size()>0) {

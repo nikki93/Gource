@@ -45,6 +45,7 @@ class RCommit {
 public:
     time_t timestamp;
     std::string username;
+    std::string body;
 
     std::list<RCommitFile> files;
 
