@@ -21,9 +21,12 @@ float gGourceFileDiameter  = 8.0;
 
 std::vector<RFile*> gGourceRemovedFiles;
 
-RFile::RFile(const std::string & name, const vec3f & colour, const vec2f & pos, int tagid) : Pawn(name,pos,tagid) {
+FXFont file_selected_font;
+FXFont file_font;
+
+RFile::RFile(const std::string & name, const vec3 & colour, const vec2 & pos, int tagid) : Pawn(name,pos,tagid) {
     hidden = true;
-    size = gGourceFileDiameter;
+    size = gGourceFileDiameter * 1.05;
     radius = size * 0.5;
 
     setGraphic(gGourceSettings.file_graphic);
@@ -32,80 +35,94 @@ RFile::RFile(const std::string & name, const vec3f & colour, const vec2f & pos, 
     nametime = 4.0;
     name_interval = nametime;
 
-    namecol     = vec3f(1.0, 1.0, 1.0);
+    namecol     = vec3(1.0, 1.0, 1.0);
     file_colour = colour;
 
-    last_action = 0.0;
-    expiring=false;
-    removing=false;
+    last_action    = 0.0f;
+    fade_start     = -1.0f;
+    expired        = false;
+    forced_removal = false;
 
     shadow = true;
 
     distance = 0;
 
-    this->fullpath = name;
-    this->name = name;
+    setFilename(name);
 
-    path_hash = 0;
+    if(!file_selected_font.initialized()) {
+        file_selected_font = fontmanager.grab("FreeSans.ttf", 18);
+        file_selected_font.dropShadow(true);
+        file_selected_font.roundCoordinates(false);
+        file_selected_font.setColour(vec4(gGourceSettings.selection_colour, 1.0f));
+    }
 
-    setPath();
+    if(!file_font.initialized()) {
+        file_font = fontmanager.grab("FreeSans.ttf", 14);
+        file_font.dropShadow(true);
+        file_font.roundCoordinates(false);
+        file_font.setColour(vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    }
 
-    namelist = glGenLists(1);
-
-    font = 0;
+    //namelist = glGenLists(1);
+    //label = 0;
     setSelected(false);
 
     dir = 0;
-
-    if(path.size()) path_hash = stringHash(path);
 }
 
 RFile::~RFile() {
-    glDeleteLists(namelist, 1);
+    //glDeleteLists(namelist, 1);
 }
 
 void RFile::remove(bool force) {
-    last_action = elapsed - gGourceSettings.file_idle_time;
-    if(force) removing = true;
+    last_action = elapsed;
+    fade_start  = elapsed;
+    if(force) forced_removal = true;
 }
 
 void RFile::setDir(RDirNode* dir) {
     this->dir = dir;
 }
 
-const std::string & RFile::getFullPath() const {
-    return fullpath;
-}
-
 RDirNode* RFile::getDir() const{
     return dir;
 }
 
-vec2f RFile::getAbsolutePos() const{
+vec2 RFile::getAbsolutePos() const{
     return pos + dir->getPos();
 }
 
-int RFile::getPathHash() const{
-    return path_hash;
+bool RFile::overlaps(const vec2& pos) const {
+
+    vec2 abs_pos = getAbsolutePos();
+
+    float halfsize_x = size * 0.5f;
+    vec2 halfsize ( halfsize_x, halfsize_x * graphic_ratio );
+
+    Bounds2D file_bounds(abs_pos - halfsize, abs_pos + halfsize);
+
+    return file_bounds.contains(pos);
 }
 
-void RFile::setPath() {
+void RFile::setFilename(const std::string& abs_file_path) {
 
-    size_t pos = name.rfind('/');
+    fullpath = abs_file_path;
+
+    size_t pos = fullpath.rfind('/');
 
     if(pos != std::string::npos) {
         path = name.substr(0,pos+1);
         name = name.substr(pos+1, std::string::npos);
     } else {
         path = std::string("");
+        name = abs_file_path;
     }
 
     //trim name to just extension
-    if(gGourceSettings.file_extensions) {
-        int dotsep=0;
-        if((dotsep=name.rfind(".")) != std::string::npos && dotsep != name.size()-1 && dotsep != 0) {
-            shortname = name.substr(dotsep+1);
-        }
+    int dotsep=0;
+
+    if((dotsep=name.rfind(".")) != std::string::npos && dotsep != name.size()-1) {
+        ext = name.substr(dotsep+1);
     }
 }
 
@@ -113,18 +130,14 @@ int call_count = 0;
 
 
 void RFile::setSelected(bool selected) {
-    if(font.getFTFont()!=0 && this->selected==selected) return;
+//    if(font.getFTFont()!=0 && this->selected==selected) return;
+    //if(label && this->selected==selected) return;
 
-    if(selected) {
-        font = fontmanager.grab("FreeSans.ttf", 18);
-    } else {
-        font = fontmanager.grab("FreeSans.ttf", 11);
-    }
-
-    font.dropShadow(false);
-    font.roundCoordinates(true);
+//    if(!label) label = new FXLabel();
 
     Pawn::setSelected(selected);
+
+//    updateLabel();
 
     //pre-compile name display list
     //glNewList(namelist, GL_COMPILE);
@@ -132,21 +145,39 @@ void RFile::setSelected(bool selected) {
     //glEndList();
 }
 
-const vec3f& RFile::getNameColour() const{
-    return selected ? selectedcol : namecol;
+void RFile::updateLabel() {
+/*    bool show_file_ext = gGourceSettings.file_extensions;
+
+    if(selected) {
+        label->setText(file_selected_font, (selected || !show_file_ext) ? name : ext);
+    } else {
+        label->setText(file_font,          (selected || !show_file_ext) ? name : ext);
+    }*/
 }
 
-const vec3f & RFile::getFileColour() const{
+void RFile::colourize() {
+    file_colour = ext.size() ? colourHash(ext) : vec3(1.0f, 1.0f, 1.0f);
+}
+
+const vec3& RFile::getNameColour() const{
+    return selected ? gGourceSettings.selection_colour : namecol;
+}
+
+void RFile::setFileColour(const vec3 & colour) {
+    file_colour = colour;
+}
+
+const vec3 & RFile::getFileColour() const{
     return file_colour;
 }
 
-vec3f RFile::getColour() const{
-    if(selected) return vec3f(1.0, 1.0, 1.0);
+vec3 RFile::getColour() const{
+    if(selected) return vec3(1.0f);
 
     float lc = elapsed - last_action;
 
-    if(lc<1.0) {
-        return touch_colour * (1.0-lc) + file_colour * lc;
+    if(lc<1.0f) {
+        return touch_colour * (1.0f-lc) + file_colour * lc;
     }
 
     return file_colour;
@@ -156,8 +187,8 @@ float RFile::getAlpha() const{
     float alpha = Pawn::getAlpha();
 
     //user fades out if not doing anything
-    if(elapsed - last_action > gGourceSettings.file_idle_time) {
-        alpha = 1.0 - std::min(elapsed - last_action - gGourceSettings.file_idle_time, 1.0f);
+    if(fade_start > 0.0f) {
+        alpha = 1.0 - glm::clamp(elapsed - fade_start, 0.0f, 1.0f);
     }
 
     return alpha;
@@ -166,43 +197,44 @@ float RFile::getAlpha() const{
 void RFile::logic(float dt) {
     Pawn::logic(dt);
 
-    vec2f dest_pos = dest;
+    vec2 dest_pos = dest;
 /*
     if(dir->getParent() != 0 && dir->noDirs()) {
-        vec2f dirnorm = dir->getNodeNormal();
+        vec2 dirnorm = dir->getNodeNormal();
         dest_pos = dirnorm + dest;
     }*/
-
-    float dradius = dir->getRadius();
 
     dest_pos = dest_pos * distance;
 
     accel = dest_pos - pos;
 
     // apply accel
-    vec2f accel2 = accel * speed * dt;
+    vec2 accel2 = accel * speed * dt;
 
-    if(accel2.length2() > accel.length2()) {
+    if(glm::length2(accel2) > glm::length2(accel)) {
         accel2 = accel;
     }
 
     pos += accel2;
 
     //files have no momentum
-    accel = vec2f(0.0f, 0.0f);
+    accel = vec2(0.0f, 0.0f);
 
+    if(fade_start < 0.0f && gGourceSettings.file_idle_time > 0.0f && (elapsed - last_action) > gGourceSettings.file_idle_time) {
+        fade_start = elapsed;
+    }
+    
     // has completely faded out
-    if(!expiring && elapsed - last_action >= gGourceSettings.file_idle_time + 1.0) {
-        expiring=true;
+    if(fade_start > 0.0f && !expired && (elapsed - fade_start) >= 1.0) {
+
+        expired = true;
 
         bool found = false;
-
         for(std::vector<RFile*>::iterator it = gGourceRemovedFiles.begin(); it != gGourceRemovedFiles.end(); it++) {
             if((*it) == this) {
                 found = true;
                 break;
             }
-
         }
 
         if(!found) {
@@ -211,27 +243,28 @@ void RFile::logic(float dt) {
         }
     }
 
-    if(isHidden() && !removing) elapsed = 0.0;
+    if(isHidden() && !forced_removal) elapsed = 0.0;
 }
 
-void RFile::touch(const vec3f & colour) {
-    if(removing) return;
+void RFile::touch(const vec3 & colour) {
+    if(forced_removal) return;
 
+    fade_start = -1.0f;
+    
     //fprintf(stderr, "touch %s\n", fullpath.c_str());
 
     last_action = elapsed;
     touch_colour = colour;
 
     //un expire file
-    if(expiring) {
+    if(expired) {
         for(std::vector<RFile*>::iterator it = gGourceRemovedFiles.begin(); it != gGourceRemovedFiles.end(); it++) {
             if((*it) == this) {
                 gGourceRemovedFiles.erase(it);
                 break;
             }
         }
-
-        expiring=false;
+        expired=false;
     }
 
     showName();
@@ -247,36 +280,36 @@ void RFile::setHidden(bool hidden) {
     Pawn::setHidden(hidden);
 }
 
-void RFile::drawNameText(float alpha) const {
+void RFile::calcScreenPos(GLint* viewport, GLdouble* modelview, GLdouble* projection) {
 
+    static GLdouble screen_x, screen_y, screen_z;
+
+    vec2 text_pos = getAbsolutePos();
+    text_pos.x += 5.5f;
+
+    if(selected)
+        text_pos.y -= 2.0f;
+    else
+        text_pos.y -= 1.0f;
+
+    gluProject( text_pos.x, text_pos.y, 0.0f, modelview, projection, viewport, &screen_x, &screen_y, &screen_z);
+    screen_y = (float)viewport[3] - screen_y;
+
+    screenpos.x = screen_x;
+    screenpos.y = screen_y;
+}
+
+void RFile::drawNameText(float alpha) {
     if(!selected && alpha <= 0.01) return;
 
-    vec3f nameCol    = getNameColour();
     float name_alpha = selected ? 1.0 : alpha;
 
-    vec3f drawpos = screenpos;
-
-    //drawpos.x += 10.0;
-    //drawpos.y -= 10.0;
-
-    glPushMatrix();
-
-        glTranslatef(drawpos.x, drawpos.y, 0.0);
-
-        //hard coded drop shadow
-        glPushMatrix();
-            glTranslatef(1.0, 1.0, 0.0);
-            glColor4f(0.0, 0.0, 0.0, name_alpha * 0.7f);
-            //glCallList(namelist);
-            font.draw(0.0f, 0.0f, (selected || shortname.size()==0) ? name : shortname);
-        glPopMatrix();
-
-        //draw name
-        glColor4f(nameCol.x, nameCol.y, nameCol.z, name_alpha);
-        //glCallList(namelist);
-        font.draw(0.0f, 0.0f, (selected || shortname.size()==0) ? name : shortname);
-
-    glPopMatrix();
+    if(selected) {
+        file_selected_font.draw(screenpos.x, screenpos.y, name);
+    } else {
+        file_font.setAlpha(name_alpha);
+        file_font.draw(screenpos.x, screenpos.y, gGourceSettings.file_extensions ? ext : name);
+    }
 }
 
 void RFile::draw(float dt) {

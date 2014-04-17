@@ -10,30 +10,44 @@ Contents
 1. Dependencies
 ===============
 
-Gource requires the following libraries to compile:
+Gource requires the following libraries to compile (package names may vary):
+
+    SDL 2.0 (libsdl2-dev)
+    SDL Image 2.0 (libsdl2-image-dev)
+    PCRE (libpcre3-dev)
+    Freetype 2 (libfreetype6-dev)
+    GLEW (libglew-dev)
+    GLM >= 0.9.3 (libglm-dev)
+    Boost Filesystem >= 1.46 (libboost-filesystem-dev)
+    PNG >= 1.2 (libpng12-dev)
+
+    If SDL 2.0 is unavailable you can still use SDL 1.2, but this is deprecated:
 
     SDL 1.2 (libsdl1.2-dev)
     SDL Image 1.2 (libsdl-image1.2-dev)
-    PCRE3 (libpcre3-dev)
-    FTGL 2.1.3~rc5-2 (libftgl-dev)
-    PNG library (libpng12-dev)
-    JPEG library (libjpeg62-dev)
-    GLEW (libglew1.5-dev)
+
+Optional:
+
+   TinyXML (libtinyxml-dev)
+
+SDL Image needs to have been built with support PNG and JPEG images.
+
+GLM is a header only library that you can get from http://glm.g-truc.net/ if your distribution does not include it.
 
 2. Building
 ===========
 
+Gource requires a GNU compatible C++ compiler that supports c++0x features such as 'auto' and the new 'for' loop syntax.
+
+GCC 4.6+ or Clang recommended.
+
 If you got the source directly from the Gource.git repository, you will first
-need to run autoreconf to generate the configure script:
+need to run autogen.sh which will generate the configure script and
+initialize and update the submodules.
 
-    autoreconf -f -i
+    ./autogen.sh
 
-You also need to initialize and update the submodules:
-
-    git submodule init
-    git submodule update
-
-Building on Linux/Mac OS:
+Generic build instructions for Linux/Mac OS:
 
     ./configure
     make
@@ -46,6 +60,8 @@ for the Code Blocks IDE (www.codeblocks.org).
 
 A pre-built version for Windows is normally available from the homepage.
 
+Gource expects SDL to have been built with the NO_STDIO_REDIRECT flag.
+
 3. Configure Options
 ====================
 
@@ -54,3 +70,9 @@ By default Gource will install some GNU FreeFont TTF Fonts on your system.
 If you already have these fonts, you can configure Gource to use them with:
 
     ./configure --enable-ttf-font-dir=/path/to/freefont/
+
+Gource includes a copy of the TinyXML library. To make Gource build against
+the system library of TinyXML use:
+
+    ./configure --with-tinyxml
+

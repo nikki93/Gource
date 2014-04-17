@@ -27,15 +27,15 @@ RAction::RAction(RUser* source, RFile* target, float addedtime) {
     rate = 0.5;
 }
 
-bool RAction::isFinished() {
-    return (progress >= 1.0) ? true : false;
+void RAction::apply() {
+    target->touch(colour);
 }
 
 void RAction::logic(float dt) {
     if(progress >= 1.0) return;
 
     if(progress == 0.0) {
-        target->touch(colour);
+        apply();
     }
 
     float action_rate = std::min(10.0f, rate * std::max(1.0f, ((float)source->getPendingActionCount())));
@@ -43,58 +43,73 @@ void RAction::logic(float dt) {
     progress = std::min(progress + action_rate * dt, 1.0f);
 }
 
-void RAction::draw(float dt) {
+void RAction::drawToVBO(quadbuf& buffer) const {
     if(isFinished()) return;
 
-    vec2f src  = source->getPos();
-    vec2f dest = target->getAbsolutePos();
+    vec2 src  = source->getPos();
+    vec2 dest = target->getAbsolutePos();
 
-    vec2f offset     = (dest - src).normal().perpendicular() * target->getSize() * 0.5;
-    vec2f offset_src = offset * 0.3f;
+    //TODO: could use glm::perp
+
+    vec2 n    = normalise(dest - src);
+    vec2 perp = vec2(-n.y, n.x);
+
+    vec2 offset     = perp * target->getSize() * 0.5f;
+    vec2 offset_src = offset * 0.3f;
 
     float alpha = 1.0 - progress;
     float alpha2 = alpha * 0.1;
 
-    vec4f col1 = vec4f(colour, alpha);
-    vec4f col2 = vec4f(colour, alpha2);
+    vec4 col1 = vec4(colour, alpha);
+    vec4 col2 = vec4(colour, alpha2);
+
+    quadbuf_vertex v1(src  - offset_src,  col2, vec2(0.0f, 0.0f));
+    quadbuf_vertex v2(src  + offset_src,  col2, vec2(0.0f, 1.0f));
+    quadbuf_vertex v3(dest + offset,      col1, vec2(1.0f, 1.0f));
+    quadbuf_vertex v4(dest - offset,      col1, vec2(1.0f, 0.0f));
+
+    buffer.add(0, v1, v2, v3, v4);
+}
+
+void RAction::draw(float dt) {
+    if(isFinished()) return;
+
+    vec2 src  = source->getPos();
+    vec2 dest = target->getAbsolutePos();
+
+    vec2 n    = normalise(dest - src);
+    vec2 perp = vec2(-n.y, n.x);
+
+    vec2 offset     = perp * target->getSize() * 0.5f;
+    vec2 offset_src = offset * 0.3f;
+
+    float alpha = 1.0 - progress;
+    float alpha2 = alpha * 0.1;
+
+    vec4 col1 = vec4(colour, alpha);
+    vec4 col2 = vec4(colour, alpha2);
 
     glBegin(GL_QUADS);
-        glColor4fv(col2);
+        glColor4fv(glm::value_ptr(col2));
         glTexCoord2f(0.0,0.0);
         glVertex2f(src.x - offset_src.x, src.y - offset_src.y);
         glTexCoord2f(0.0,1.0);
         glVertex2f(src.x + offset_src.x, src.y + offset_src.y);
 
-        glColor4fv(col1);
+        glColor4fv(glm::value_ptr(col1));
         glTexCoord2f(1.0,1.0);
         glVertex2f(dest.x + offset.x, dest.y + offset.y);
         glTexCoord2f(1.0,0.0);
        glVertex2f(dest.x - offset.x, dest.y - offset.y);
     glEnd();
-
-/*
-    glBegin(GL_QUADS);
-        glColor4fv(col2);
-        glTexCoord2f(0.0,0.0);
-        glVertex2f(src.x - offset_src.x, src.y - offset_src.y);
-        glTexCoord2f(1.0,0.0);
-        glVertex2f(src.x + offset_src.x, src.y + offset_src.y);
-
-        glColor4fv(col1);
-        glTexCoord2f(0.0,0.0);
-        glVertex2f(dest.x + offset.x, dest.y + offset.y);
-        glTexCoord2f(1.0,0.0);
-       glVertex2f(dest.x - offset.x, dest.y - offset.y);
-    glEnd();
-*/
 }
 
 CreateAction::CreateAction(RUser* source, RFile* target, float addedtime) : RAction(source, target, addedtime) {
-    colour = vec3f(0.0, 1.0, 0.0);
+    colour = vec3(0.0, 1.0, 0.0);
 }
 
 RemoveAction::RemoveAction(RUser* source, RFile* target, float addedtime): RAction(source, target, addedtime) {
-    colour = vec3f(1.0, 0.0, 0.0);
+    colour = vec3(1.0, 0.0, 0.0);
 }
 
 void RemoveAction::logic(float dt) {
@@ -107,6 +122,12 @@ void RemoveAction::logic(float dt) {
     }
 }
 
-ModifyAction::ModifyAction(RUser* source, RFile* target, float addedtime) : RAction(source, target, addedtime) {
-    colour = vec3f(1.0, 0.7, 0.3);
+ModifyAction::ModifyAction(RUser* source, RFile* target, float addedtime, const vec3& modify_colour)
+    : modify_colour(modify_colour), RAction(source, target, addedtime) {
+    colour = vec3(1.0, 0.7, 0.3);
+}
+
+void ModifyAction::apply() {
+    RAction::apply();
+    target->setFileColour(modify_colour);
 }

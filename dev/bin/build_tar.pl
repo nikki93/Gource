@@ -22,23 +22,28 @@ sub gource_version {
 my $VERSION = gource_version();
 
 my @exclusions = (
+    qr{^/autogen\.sh$},
+    qr{^/backup/},
+    qr{^/confs/},
+    qr{^/cmd/},
+    qr{^/resources/},
+    qr{^/tests/},
+    qr{^/scripts/},
     qr{^/contrib/},
     qr{^/config.status$},
     qr{^/config.log$},
-    qr{^/debian/},
     qr{^/gource$},
     qr{^/dev/},
     qr{^/logs/},
     qr{/\.},
-    qr{^/README-SDL$},
     qr{Makefile$},
     qr{\.o$},
     qr{^/todo.txt$},
     qr{^/build-stamp$},
     qr{^/autom4te},
     qr{^/src/core/README$},
+    qr{^/src/core/ui/},
     qr{\.d$},
-    qr{^/test/},
 );
 
 my @inclusions = (
@@ -48,14 +53,13 @@ my @inclusions = (
     qr{^/COPYING$},
     qr{^/INSTALL$},
     qr{^/README$},
-    qr{/Makefile\.am$},
-    qr{/Makefile\.in$},
+    qr{/Makefile\.(?:am|in)$},
     qr{^/aclocal\.m4$},
     qr{^/m4/.+\.m4$},
     qr{^/configure(?:\.ac)?$},
-    qr{^/src/.+\.(?:cpp|h)$},
+    qr{^/src/.+\.(?:cpp|h|cc|hh)$},
     qr{^/data/file\.png$},
-    qr{^/data/no_photo\.png$},
+    qr{^/data/user\.png$},
     qr{^/data/beam\.png$},
     qr{^/data/bloom\.tga$},
     qr{^/data/bloom_alpha\.tga$},
@@ -64,11 +68,10 @@ my @inclusions = (
     qr{^/data/gource\.1$},
     qr{^/data/gource\.style$},
     qr{^/data/fonts/README$},
-    qr{^/config\.guess$},
-    qr{^/config\.sub$},
-    qr{^/install-sh$},
-    qr{^/missing$},
-    qr{^/depcomp$},
+    qr{^/data/shaders/bloom\.(?:vert|frag)$},
+    qr{^/data/shaders/shadow\.(?:vert|frag)$},
+    qr{^/data/shaders/text\.(?:vert|frag)$},
+    qr{^/build-aux/(?:compile|config.(?:guess|sub)|depcomp|install-sh|missing)$},
 );
 
 my $tmp_path = "/var/tmp/gource-$VERSION";
@@ -115,7 +118,7 @@ foreach my $file (@files) {
     next if grep { $file =~ $_ } @exclusions;
 
     unless(grep { $file =~ $_ } @inclusions) {
-        warn "nothing known about $file\n";
+        warn "WARNING: nothing known about $file\n";
         next;
     }
 

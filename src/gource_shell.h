@@ -25,11 +25,10 @@
 class GourceShell : public SDLApp {
 
     Gource* gource;
-
     bool next;
 
-    GLuint transition_texture;
-    float  transition_interval; 
+    TextureResource* transition_texture;
+    float  transition_interval;
 
     FrameExporter* exporter;
     ConfFile* conf;
@@ -43,10 +42,20 @@ public:
 
     void update(float t, float dt);
 
+    void resize(int width, int height);
+
+    void toggleFullscreen();
+
+    void quit();
+
     void keyPress(SDL_KeyboardEvent *e);
     void mouseMove(SDL_MouseMotionEvent *e);
     void mouseClick(SDL_MouseButtonEvent *e);
-
+#if SDL_VERSION_ATLEAST(2,0,0)
+    void mouseWheel(SDL_MouseWheelEvent *e);
+#endif
 };
 
 #endif
+
+extern GourceShell* gGourceShell;

@@ -17,7 +17,7 @@ requires a OpenGL capable video card to run.
 Help ('\fB-H\fR' for extended help).
 .TP
 \fB\-WIDTHxHEIGHT, \-\-viewport WIDTHxHEIGHT\fR
-Set the viewport size. If \-f is also supplied, will attempt to set the video mode to this also.
+Set the viewport size. If \-f is also supplied, will attempt to set the video mode to this also. Add ! to make the window non-resizable.
 .TP
 \fB\-f\fR
 Fullscreen
@@ -28,19 +28,35 @@ Windowed
 \fB\-\-transparent\fR
 Make the background transparent. Only really useful for screenshots.
 .TP
+\fB\-\-start\-date 'YYYY\-MM\-DD hh:mm:ss +tz'\fR
+Start with the first entry after the supplied date and optional time.
+
+If a time zone offset isn't specified the local time zone is used.
+
+Example accepted formats:
+
+    "2012-06-30"
+    "2012-06-30 12:00"
+    "2012-06-30 12:00:00 +12"
+.TP
+\fB\-\-stop\-date 'YYYY\-MM\-DD hh:mm:ss +tz'\fR
+Stop at the last entry prior to the supplied date and optional time.
+
+Uses the same format as \-\-start\-date.
+.TP
 \fB\-p, \-\-start\-position POSITION\fR
 Begin at some position in the log (between 0.0 and 1.0 or 'random').
 .TP
-\fB    \-\-stop\-position  POSITION\fR
+\fB\-\-stop\-position  POSITION\fR
 Stop (exit) at some position in the log (does not work with STDIN).
 .TP
 \fB\-t, \-\-stop\-at\-time SECONDS\fR
 Stop (exit) after a specified number of seconds.
 .TP
-\fB    \-\-stop\-at\-end\fR
+\fB\-\-stop\-at\-end\fR
 Stop (exit) at the end of the log / stream.
 .TP
-\fB    \-\-loop\fR
+\fB\-\-loop\fR
 Loop back to the start of the log when the end is reached.
 .TP
 \fB\-a, \-\-auto\-skip\-seconds SECONDS\fR
@@ -49,11 +65,14 @@ Automatically skip to next entry if nothing happens for a specified number of se
 \fB\-s, \-\-seconds\-per\-day SECONDS\fR
 Speed of simulation in seconds per day.
 .TP
-\fB\    \-\-realtime\fR
+\fB\-\-realtime\fR
 Realtime playback speed.
 .TP
+\fB\-c, \-\-time\-scale SCALE\fR
+Change simulation time scale.
+.TP
 \fB\-i, \-\-file\-idle\-time SECONDS\fR
-Time in seconds files remain idle before they are removed.
+Time in seconds files remain idle before they are removed or 0 for no limit.
 .TP
 \fB\-e, \-\-elasticity FLOAT\fR
 Elasticity of nodes.
@@ -68,10 +87,13 @@ Set a background image.
 Set a title
 .TP
 \fB\-\-font\-size SIZE\fR
-Font size.
+Font size used by the date and title.
 .TP
 \fB\-\-font\-colour FFFFFF\fR
-Font colour in hex.
+Font colour used by the date and title in hex.
+.TP
+\fB\-\-key\fR
+Show file extension key.
 .TP
 \fB\-\-logo IMAGE\fR
 Logo to display in the foreground.
@@ -83,10 +105,10 @@ Offset position of the logo.
 Specify display date string (strftime format).
 .TP
 \fB\-\-log\-command VCS\fR
-Show the log command used by gource (git,cvs,hg,bzr).
+Show the log command used by gource (git,svn,hg,bzr,cvs2cl).
 .TP
 \fB\-\-log\-format VCS\fR
-Specify format of the log being read (git,cvs,hg,bzr,custom). Required when reading from STDIN.
+Specify format of the log being read (git,svn,hg,bzr,cvs2cl,custom). Required when reading from STDIN.
 .TP
 \fB\-\-git\-branch\fR
 Get the git log of a branch other than the current one.
@@ -94,14 +116,26 @@ Get the git log of a branch other than the current one.
 \fB\-\-follow\-user USER\fR
 Have the camera automatically follow a particular user.
 .TP
+\fB\-\-highlight\-dirs\fR
+Highlight the names of all directories.
+.TP
 \fB\-\-highlight\-user USER\fR
 Highlight the names of a particular user.
 .TP
 \fB\-\-highlight\-users\fR
 Highlight the names of all users.
 .TP
-\fB\-\-highlight\-dirs\fR
-Highlight the names of all directories.
+\fB\-\-highlight\-colour FFFFFF\fR
+Font colour for highlighted users in hex.
+.TP
+\fB\-\-selection\-colour FFFFFF\fR
+Font colour for selected users and files.
+.TP
+\fB\-\-dir\-colour FFFFFF\fR
+Font colour for directories.
+.TP
+\fB\-\-dir\-name\-depth DEPTH\fR
+Draw names of directories down to a specific depth in the tree.
 .TP
 \fB\-\-file\-extensions\fR
 Show filename extensions only.
@@ -130,23 +164,26 @@ Camera view padding.
 \fB\-\-multi\-sampling\fR
 Enable multi-sampling.
 .TP
+\fB\-\-no\-vsync\fR
+Disable vsync.
+.TP
 \fB\-\-bloom\-multiplier FLOAT\fR
 Adjust the amount of bloom.
 .TP
 \fB\-\-bloom\-intensity FLOAT\fR
 Adjust the intensity of the bloom.
 .TP
-\fB\-\-max\-files\fR
-Set the maximum number of files. Excess files will be discarded.
+\fB\-\-max\-files NUMBER\fR
+Set the maximum number of files or 0 for no limit. Excess files will be discarded.
 .TP
 \fB\-\-max\-file\-lag SECONDS\fR
-Max time files of a commit can take to appear.
+Max time files of a commit can take to appear. Use \-1 for no limit.
 .TP
 \fB\-\-max\-user\-speed UNITS\fR
 Max speed users can travel per second.
 .TP
 \fB\-\-user\-friction SECONDS\fR
-Time users come to a complete hault.
+Time users take to come to a halt.
 .TP
 \fB\-\-user\-scale SCALE\fR
 Change scale of users.
@@ -167,12 +204,31 @@ Hide one or more display elements from the list below:
     filenames \- names of files
     mouse     \- mouse cursor
     progress  \- progress bar widget
+    root      \- root directory of the tree
     tree      \- animated tree structure
     users     \- user avatars
     usernames \- names of users
 
 Separate multiple elements with commas (eg 'mouse,progress')
 
+.TP
+\fB\-\-hash\-seed SEED\fR
+Change the seed of hash function.
+.TP
+\fB\-\-caption-file FILE
+Caption file (see Caption Log Format).
+.TP
+\fB\-\-caption-size SIZE
+Caption size.
+.TP
+\fB\-\-caption-colour FFFFFF
+Caption colour in hex.
+.TP
+\fB\-\-caption-duration SECONDS
+Caption duration.
+.TP
+\fB\-\-caption-offset X
+Caption horizontal offset (0 to centre captions).
 .TP
 \fB\-o, \-\-output\-ppm\-stream FILE\fR
 Output a PPM image stream to a file ('\-' for STDOUT).
@@ -183,6 +239,9 @@ This will automatically hide the progress bar initially and enable 'stop\-at\-en
 \fB\-r, \-\-output\-framerate FPS\fR
 Framerate of output (25,30,60). Used with \-\-output\-ppm\-stream.
 .TP
+\fB\-\-output\-custom\-log FILE\fR
+Output a custom format log file ('\-' for STDOUT).
+.TP
 \fB\-\-load\-config CONFIG_FILE\fR
 Load a config file.
 .TP
@@ -192,13 +251,13 @@ Save a config file with the current options.
 \fB\-\-path PATH\fR
 .TP
 \fBpath\fR
-Either a supported version control directory, a pre-generated log file (see log commands or the custom log format), a gource conf file or '-' to read STDIN.
+Either a supported version control directory, a pre-generated log file (see log commands or the custom log format), a Gource conf file or '-' to read STDIN.
 
-If path is ommited, gource will attempt to read a log from the current directory.
+If path is omitted, gource will attempt to read a log from the current directory.
 
-.SH GIT, BAZAAR AND MERCURIAL EXAMPLES
+.SS Git, Bazaar, Mercurial and SVN Examples
 
-View the log of the respository in the current path:
+View the log of the repository in the current path:
 
 .ti 10
 \fIgource\fR
@@ -208,27 +267,34 @@ View the log of a project in the specified directory:
 .ti 10
 \fIgource\fR my\-project\-dir
 
-Save a copy of the log using in a special log format and play it back (example is for Git):
+For large projects, generating a log of the project history may take a long time. For centralized VCS like SVN, generating the log will put load on the central VCS server.
+
+In these cases, you may like to save a copy of the log for later use.
+
+You can generate a log in the VCS specific log format using the \-\-log\-command VCS option:
 
 .ti 10
-cd my\-git\-project
+cd my\-svn\-project
 .ti 10
-\`\fIgource\fR \-\-git\-log\-command\` > my\-git\-project.log
+\`\fIgource\fR \-\-log\-command svn\` > my\-svn\-project.log
 .ti 10
-\fIgource\fR my\-git\-project.log
+\fIgource\fR my\-svn\-project.log
 
-NOTE: \-\-git-log-command assumes you have a recent version of git that supports all the options. You may need to modify the command line to work with an older version (changing %aN to %an for instance).
-
-.SH OTHER VERSION CONTROL SYSTEMS
-
-The Gource homepage has guides and examples for using Gource with other version control systems:
+You can also have Gource write a copy of the log file in its own format:
 
 .ti 10
-CVS       - http://code.google.com/p/gource/wiki/CVS
-.ti 10
-SVN       - http://code.google.com/p/gource/wiki/SVN
+\fIgource\fR \-\-output\-custom\-log my\-project\-custom.log
 
-.SH CUSTOM LOG FORMAT
+.SS CVS Support
+
+Use 'cvs2cl' to generate the log and then pass it to Gource:
+
+.ti 10
+cvs2cl \-\-chrono \-\-stdout \-\-xml \-g\-q > my\-cvs\-project.log
+.ti 10
+gource my\-cvs\-project.log
+
+.SS Custom Log Format
 
 If you want to use Gource with something other than the supported systems, there is a pipe ('|') delimited custom log format:
 
@@ -243,17 +309,33 @@ file      - Path of the file updated.
 .ti 10
 colour    - A colour for the file in hex (FFFFFF) format. Optional.
 
-.SH RECORDING VIDEOS
+.SS Caption Log Format
+
+Gource can display captions along the timeline by specifying a caption file (using \-\-caption\-file) in the pipe ('|') delimited format below:
+
+.ti 10
+timestamp - A unix timestamp of when to display the caption.
+.ti 10
+caption   - The caption
+
+.SS Recording Videos
 
 See the guide on the homepage for examples of recording videos with Gource:
 
 .ti 10
 http://code.google.com/p/gource/wiki/Videos
 
+.SS More Information
+
+Visit the Gource homepage for guides and examples of using Gource with various version control systems:
+
+.ti 10
+http://code.google.com/p/gource/
+
 .SH INTERFACE
 The time shown in the top left of the screen is set initially from the first log entry read and is incremented according to the simulation speed (\-\-seconds\-per\-day).
 
-Pressing SPACE at any time will pause/unpause the simulation. While paused you may use the mouse to inspect the detail of individual files and users.
+Pressing SPACE at any time will pause/resume the simulation. While paused you may use the mouse to inspect the detail of individual files and users.
 
 TAB cycles through selecting the current visible users.
 
@@ -270,15 +352,23 @@ Interactive keyboard commands:
 .ti 10
 (C)   Displays Gource logo
 .ti 10
-(M)   Toggle mouse visibility.
+(K)   Toggle file extension key
 .ti 10
-(N)   Jump forward in time to next log entry.
+(M)   Toggle mouse visibility
 .ti 10
-(+-)  Adjust simulation speed.
+(N)   Jump forward in time to next log entry
 .ti 10
-(<>)  Adjust time scale.
+(S)   Randomize colours
+.ti 10
+(+-)  Adjust simulation speed
+.ti 10
+(<>)  Adjust time scale
 .ti 10
 (TAB) Cycle through visible users
+.ti 10
+(F12) Screenshot
+.ti 10
+(Alt+Enter) Fullscreen toggle
 .ti 10
 (ESC) Quit
 .SH AUTHOR

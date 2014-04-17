@@ -26,7 +26,8 @@ class RFile;
 
 class RAction {
 protected:
-    vec3f colour;
+    vec3 colour;
+    virtual void apply();
 public:
     RUser* source;
     RFile* target;
@@ -37,10 +38,13 @@ public:
     float rate;
 
     RAction(RUser* source, RFile* target, float addedtime);
-
-    bool isFinished();
+    virtual ~RAction() {};
+    
+    inline bool isFinished() const { return (progress >= 1.0); };
 
     virtual void logic(float dt);
+
+    void drawToVBO(quadbuf& buffer) const ;
     void draw(float dt);
 };
 
@@ -57,8 +61,12 @@ public:
 };
 
 class ModifyAction : public RAction {
+protected:
+    vec3 modify_colour;
 public:
-    ModifyAction(RUser* source, RFile* target, float addedtime);
+    ModifyAction(RUser* source, RFile* target, float addedtime, const vec3& modify_colour);
+
+    void apply();
 };
 
 #endif

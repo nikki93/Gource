@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include "gource_settings.h"
+
 #include "core/display.h"
 #include "core/fxfont.h"
 #include "core/vectors.h"
@@ -27,15 +29,12 @@
 
 class Pawn : public QuadItem {
 protected:
-    vec2f pos;
-    vec2f shadowOffset;
-
-    vec3f screenpos;
+    vec2 pos;
+    vec2 shadowOffset;
 
     std::string name;
     float namewidth;
-    float size;
-    vec2f accel;
+    vec2 accel;
     float speed;
 
     float elapsed;
@@ -43,8 +42,7 @@ protected:
 
     float nametime;
     float name_interval;
-    vec3f namecol;
-    vec3f selectedcol;
+    vec3 namecol;
 
     bool shadow;
 
@@ -54,23 +52,26 @@ protected:
 
     FXFont font;
 
-    float graphic_ratio;
-    TextureResource* graphic;
-
     bool mouseover;
 
     virtual bool nameVisible() const;
 
-    virtual void drawNameText(float alpha) const;
-    virtual const vec3f& getNameColour() const;
+    virtual void drawNameText(float alpha) {};
+    virtual const vec3& getNameColour() const;
 protected:
     bool selected;
 public:
-    Pawn(const std::string& name, vec2f pos, int tagid);
-    const vec2f & getPos() const { return pos; }
-    void setPos(vec2f pos);
+    float size;
+    float graphic_ratio;
+    TextureResource* graphic;
+    vec3 screenpos;
+    vec2 dims;
 
-    void calcScreenPos(const vec2f& offset);
+    Pawn(const std::string& name, vec2 pos, int tagid);
+    const vec2 & getPos() const { return pos; }
+    void setPos(vec2 pos);
+
+    void calcScreenPos(const vec2& offset);
 
     void updateQuadItemBounds();
 
@@ -80,7 +81,8 @@ public:
 
     float getSize();
     int getTagID();
-    std::string getName();
+
+    const std::string& getName() const { return name; }
 
     virtual void setSelected(bool selected);
     bool isSelected() { return selected; };
@@ -89,16 +91,15 @@ public:
     bool isHidden() const { return hidden; }
 
     virtual float getAlpha() const{ return std::min(elapsed/fadetime, 1.0f); }
-    virtual vec3f getColour() const { return vec3f(1.0, 1.0, 1.0); }
+    virtual vec3 getColour() const { return vec3(1.0, 1.0, 1.0); }
 
     void setGraphic(TextureResource* graphic);
 
     void logic(float dt);
     void draw(float dt);
     void drawShadow(float dt);
-    void drawSimple(float dt);
 
-    void drawName() const;
+    void drawName();
 };
 
 extern float gGourceShadowStrength;

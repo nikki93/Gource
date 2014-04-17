@@ -18,15 +18,9 @@
 #ifndef GOURCE_SETTINGS_H
 #define GOURCE_SETTINGS_H
 
-#define GOURCE_VERSION "0.29"
+#define GOURCE_VERSION "0.41"
 
-#include <dirent.h>
-
-#include "hg.h"
-#include "git.h"
-#include "bzr.h"
-#include "cvs-exp.h"
-
+#include "core/texture.h"
 #include "core/settings.h"
 #include "core/regex.h"
 
@@ -46,20 +40,30 @@ public:
     bool hide_progress;
     bool hide_bloom;
     bool hide_mouse;
+    bool hide_root;
 
     bool disable_auto_rotate;
+
+    bool show_key;
 
     std::string load_config;
     std::string save_config;
     std::string path;
+    bool default_path;
 
     std::string logo;
-    vec2f logo_offset;
+    vec2 logo_offset;
+
+    std::string start_date;
+    std::string stop_date;
+    time_t start_timestamp;
+    time_t stop_timestamp;
 
     float start_position;
     float stop_position;
     float stop_at_time;
 
+    bool shutdown;
     bool stop_on_idle;
     bool stop_at_end;
     bool dont_stop;
@@ -70,10 +74,16 @@ public:
 
     bool loop;
 
+    bool ffp;
+
     bool colour_user_images;
     std::string default_user_image;
     std::string user_image_dir;
     std::map<std::string, std::string> user_image_map;
+
+    float camera_zoom_min;
+    float camera_zoom_max;
+    float camera_zoom_default;
 
     std::string camera_mode;
     float padding;
@@ -84,13 +94,13 @@ public:
     float bloom_multiplier;
     float bloom_intensity;
 
-    vec3f background_colour;
+    vec3 background_colour;
     std::string background_image;
 
     std::string title;
 
     int font_size;
-    vec3f font_colour;
+    vec3 font_colour;
 
     float elasticity;
 
@@ -106,17 +116,35 @@ public:
     float user_idle_time;
     float user_friction;
     float user_scale;
+    float time_scale;
 
     bool highlight_dirs;
     bool highlight_all_users;
+
+    vec3 dir_colour;
+    vec3 highlight_colour;
+    vec3 selection_colour;
+
+    int dir_name_depth;
+
     std::vector<std::string> highlight_users;
     std::vector<std::string> follow_users;
     std::vector<Regex*> file_filters;
     std::vector<Regex*> user_filters;
     bool file_extensions;
 
+    std::string caption_file;
+    vec3 caption_colour;
+    float caption_duration;
+    int caption_size;
+    int caption_offset;
+
+    std::string output_custom_filename;
+
     TextureResource* file_graphic;
 
+    int log_level;
+    
     GourceSettings();
 
     void setGourceDefaults();

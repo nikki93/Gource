@@ -21,6 +21,10 @@ int main(int argc, char *argv[]) {
 
     SDLAppInit("Gource", "gource");
 
+#ifdef _WIN32
+        SDLApp::initConsole();
+#endif
+
     ConfFile conf;
     std::vector<std::string> files;
 
@@ -36,9 +40,11 @@ int main(int argc, char *argv[]) {
             for(std::vector<std::string>::iterator fit = files.begin(); fit != files.end(); fit++) {
                 std::string file = *fit;
 
-                if(   file.rfind(".conf") == file.size()-5
-                   || file.rfind(".cfg")  == file.size()-4
-                   || file.rfind(".ini")  == file.size()-4) {
+                int file_length = file.size();
+
+                if(   (file.rfind(".conf") == (file_length-5) && file_length > 5)
+                   || (file.rfind(".cfg")  == (file_length-4) && file_length > 4)
+                   || (file.rfind(".ini")  == (file_length-4) && file_length > 4) ) {
 
                     bool is_conf=true;
 
@@ -57,6 +63,16 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
+
+        //set log level
+        Logger::getDefault()->setLevel(gGourceSettings.log_level);
+
+#ifdef _WIN32
+        // hide console if not needed
+        if(gGourceSettings.log_level == LOG_LEVEL_OFF && !SDLApp::existing_console) {
+            SDLApp::showConsole(false);
+        }
+#endif
 
         //load config
         if(!gGourceSettings.load_config.empty()) {
@@ -92,6 +108,13 @@ int main(int argc, char *argv[]) {
             exit(0);
         }
 
+        //write custom log file
+        if(!gGourceSettings.output_custom_filename.empty() && !gGourceSettings.path.empty()) {
+
+            Gource::writeCustomLog(gGourceSettings.path, gGourceSettings.output_custom_filename);
+            exit(0);
+        }
+
     } catch(ConfFileException& exception) {
 
         SDLAppQuit(exception.what());
@@ -108,12 +131,21 @@ int main(int argc, char *argv[]) {
     }
 
     //enable vsync
-    display.enableVsync(true);
+    display.enableVsync(gGourceSettings.vsync);
+
+    //allow resizing window if we are not recording
+    if(gGourceSettings.resizable && gGourceSettings.output_ppm_filename.empty()) {
+        display.enableResize(true);
+    }
 
     try {
 
         display.init("Gource", gGourceSettings.display_width, gGourceSettings.display_height, gGourceSettings.fullscreen);
 
+#if SDL_VERSION_ATLEAST(2,0,0)
+        SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+#endif
+        
     } catch(SDLInitException& exception) {
 
         char errormsg[1024];
@@ -140,12 +172,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if(gGourceSettings.multisample) glEnable(GL_MULTISAMPLE_ARB);
+    if(display.multiSamplingEnabled()) {
+        glEnable(GL_MULTISAMPLE_ARB);
+    }
 
     GourceShell* gourcesh = 0;
 
     try {
-        gourcesh = new GourceShell(&conf, exporter);
+        gourcesh = gGourceShell = new GourceShell(&conf, exporter);
         gourcesh->run();
 
     } catch(ResourceException& exception) {
@@ -162,8 +196,9 @@ int main(int argc, char *argv[]) {
         } else {
             SDLAppQuit(exception.what());
         }
-
     }
+
+    gGourceShell = 0;
 
     if(gourcesh != 0) delete gourcesh;
     if(exporter != 0) delete exporter;

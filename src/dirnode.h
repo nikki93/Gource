@@ -22,11 +22,13 @@
 #include "core/bounds.h"
 #include "core/quadtree.h"
 #include "core/pi.h"
+#include "core/vbo.h"
 
 #include "gource_settings.h"
 
 #include "spline.h"
 #include "file.h"
+#include "bloom.h"
 
 #include <list>
 #include <set>
@@ -43,22 +45,23 @@ class RDirNode : public QuadItem {
     std::list<RDirNode*> children;
     std::list<RFile*> files;
 
-    std::map<RDirNode*, SplineEdge> splines;
+    SplineEdge spline;
 
-    vec4f col;
+    vec4 col;
 
-    vec2f spos;
+    vec2 spos;
 
-    vec2f projected_pos;
-    vec2f projected_spos;
+    vec2 projected_pos;
+    vec2 projected_spos;
 
-    vec2f pos;
-    vec2f vel;
-    vec2f accel, prev_accel;
+    vec2 pos;
+    vec2 vel;
+    vec2 accel, prev_accel;
 
     float dir_area;
 
     bool visible;
+    bool in_frustum;
     bool position_initialized;
 
     float since_node_visible;
@@ -74,8 +77,8 @@ class RDirNode : public QuadItem {
 
     int visible_count;
 
-    vec3f screenpos;
-    vec2f node_normal;
+    vec3 screenpos;
+    vec2 node_normal;
 
     void calcRadius();
     void calcColour();
@@ -84,25 +87,24 @@ class RDirNode : public QuadItem {
 
     void changePath(const std::string & abspath);
 
-    void calcProjectedPos();
-
     void setInitialPosition();
 
     void drawEdge(RDirNode* child) const;
-    void updateSpline(float dt);
+    void updateSplinePoint(float dt);
     void move(float dt);
 
-    vec2f calcFileDest(int layer_no, int file_no);
+    vec2 calcFileDest(int layer_no, int file_no);
     void updateFilePositions();
 
+    void adjustDepth();
     void adjustPath();
-    void drawDirName(const FXFont& dirfont) const;
+    void drawDirName(FXFont& dirfont) const;
 public:
     RDirNode(RDirNode* parent, const std::string & abspath);
     ~RDirNode();
 
     void printFiles();
-    
+
     bool empty() const;
 
     bool isAnchor(RDirNode* node) const;
@@ -132,7 +134,7 @@ public:
 
     const std::string & getPath() const;
 
-    const vec2f & getNodeNormal() const;
+    const vec2 & getNodeNormal() const;
 
     bool isParent(RDirNode* node) const;
 
@@ -149,20 +151,26 @@ public:
     float getRadius() const;
     float getRadiusSqrt() const;
 
-    vec3f averageFileColour() const;
+    const std::list<RFile*>* getFiles() const { return &files; };
+    void getFilesRecursive(std::list<RFile*>& files) const;
 
-    const vec4f & getColour() const;
+    vec3 averageFileColour() const;
+
+    const vec4 & getColour() const;
 
     RDirNode* getParent() const;
 
-    const vec2f & getPos() const;
+    bool isDir(const std::string& path) const;
+    void findDirs(const std::string& path, std::list<RDirNode*>& dirs);
+
+    const vec2 & getPos() const;
 
     void calcEdges();
 
-    const vec2f & getProjectedPos() const;
-    const vec2f & getSPos() const;
+    const vec2 & getProjectedPos() const;
+    const vec2 & getSPos() const;
 
-    void setPos(const vec2f & pos);
+    void setPos(const vec2 & pos);
 
     void rotate(float s, float c);
 
@@ -179,18 +187,23 @@ public:
 
     void logic(float dt);
 
-    void drawEdges(float dt) const;
-    void drawEdgeShadows(float dt) const;
+    void updateEdgeVBO(quadbuf& buffer) const;
+    
+    void drawEdges() const;
+    void drawEdgeShadows() const;
 
-    void drawBloom(const Frustum & frustum, float dt);
+    void checkFrustum(const Frustum & frustum);
 
-    void drawShadows(const Frustum & frustum, float dt) const;
-    void drawFiles(const Frustum & frustum, float dt) const;
-    void drawSimple(const Frustum & frustum, float dt) const;
+    void updateFilesVBO(quadbuf& buffer, float dt) const;
+    void updateBloomVBO(bloombuf& buffer, float dt);
 
-    void calcScreenPos();
+    void drawShadows(float dt) const;
+    void drawFiles(float dt) const;
+    void drawBloom(float dt);
 
-    void drawNames(const FXFont & dirfont, const Frustum & frustum);
+    void drawNames(FXFont& dirfont);
+
+    void calcScreenPos(GLint* viewport, GLdouble* modelview, GLdouble* projection);
 
     void nodeCount() const;
 };

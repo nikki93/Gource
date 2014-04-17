@@ -48,22 +48,22 @@ class RUser : public Pawn {
     float min_units_ps;
 
     std::string name;
-    vec3f usercol;
+    vec3 usercol;
 
     bool highlighted;
 
     bool nameVisible() const;
 
     void updateFont();
-    const vec3f& getNameColour() const;
-    void drawNameText(float alpha) const;
+    const vec3& getNameColour() const;
+    void drawNameText(float alpha);
 public:
-    RUser(const std::string& name, vec2f pos, int tagid);
+    RUser(const std::string& name, vec2 pos, int tagid);
 
-    vec3f getColour() const;
+    vec3 getColour() const;
+    void colourize();
 
-    std::string getName();
-    std::string getUsername();
+    const std::string& getName() const;
 
     void fileRemoved(RFile* f);
     void addAction(RAction* action);
@@ -83,7 +83,12 @@ public:
     void applyForceToActions();
     void applyForceAction(RAction* action);
     void applyForceUser(RUser* u);
+
+    void calcScreenPos(GLint* viewport, GLdouble* modelview, GLdouble* projection);
+
     void logic(float t, float dt);
+
+    void updateActionsVBO(quadbuf& buffer);
 
     void drawActions(float dt);
     void draw(float dt);
